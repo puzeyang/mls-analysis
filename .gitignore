@@ -1,0 +1,18 @@
+# Raw county data — contains buyer/seller names; not published.
+data/
+
+# Generated caches (rebuildable via geocode.py / fetch_parcels.py)
+output/geocode_cache.csv
+output/parcels_livingston.geojson
+
+# Generated map HTML (the published copy lives at index.html, see below)
+output/*.html
+
+# Yearly summary exports
+output/yearly_*.csv
+
+# Python / Jupyter cruft
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
