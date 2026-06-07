@@ -1,0 +1,11 @@
+{
+  // Auto-save so the open editor never holds unsaved edits that would block
+  // VS Code from reloading a notebook after Claude executes it on disk
+  // (jupyter nbconvert --execute --inplace). With the editor copy clean,
+  // external changes are picked up automatically.
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+
+  // Surface external file changes promptly.
+  "files.hotExit": "onExitAndWindowClose"
+}

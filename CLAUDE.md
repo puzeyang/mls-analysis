@@ -63,8 +63,17 @@ prefix).
 - `notebooks/sales_trends.ipynb` — loads `merged.csv`, cleans (drops
   unparseable dates + non-arms-length sales priced `< $1,000`), filters a
   segment (property class / year range / beds via the `FILTERS` cell), and plots
-  median price, sales volume, and median $/sqft by year. Exports the yearly
-  summary to `output/`.
+  median price, sales volume, and median $/sqft by year. Also a **monthly**
+  section: a year-month time series, a calendar-month **seasonality** view (sales
+  peak Jun–Aug, trough in winter), **year-over-year** price change (same month
+  vs. a year earlier; raw monthly YoY is noisy at ~30 sales/mo so a 12-mo
+  rolling-median YoY is shown alongside), and a **% vs. prior year-end** heat
+  table (each month's median vs. the prior calendar year's median, year×month,
+  last 20 years + an `Avg` row; earlier years excluded — too few sales/month to
+  be stable) and the same **pooled into 3-month seasons** (Dec–Feb, Mar–May,
+  Jun–Aug, Sep–Nov; winter labeled by ending year so Dec comes from the prior
+  calendar year; each season = one pooled median). Exports the yearly summary to
+  `output/`.
 - `notebooks/data_quality.ipynb` — reconciliation: the record funnel (raw →
   clean → mappable), per-reason drop counts (bad date / missing price / `<$1,000`
   / not geocoded), the list of addresses that fail to geocode, and a
