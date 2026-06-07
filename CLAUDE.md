@@ -42,17 +42,17 @@ service or a cached geocode table keyed by parcel/address.)
 **Direction (chosen):** primary interface is a **Jupyter notebook** for
 interactive trend analysis + reports, with an interactive **Folium** map layer.
 
-Geocoding: `geocode.py` resolves addresses to lat/lon via the **free US Census
+Geocoding: `src/geocode.py` resolves addresses to lat/lon via the **free US Census
 batch geocoder** (no API key; results are storable). It geocodes the ~8,900
 *unique* addresses (not all 20K rows) and caches to `output/geocode_cache.csv`
 keyed by raw address — re-runs only fetch new addresses. ~96% of unique
 addresses / ~97% of rows match; misses are mostly no-house-number records
-(commercial/condo). Run `python3 geocode.py` from the repo root to (re)build the
+(commercial/condo). Run `python3 src/geocode.py` from the repo root to (re)build the
 cache. (Census was chosen over Google Maps: Google needs a billing key and its
 ToS forbids caching/displaying geocodes off Google maps — both dealbreakers
 here.)
 
-Parcel polygons: `fetch_parcels.py` pulls Livingston tax-lot boundaries from the
+Parcel polygons: `src/fetch_parcels.py` pulls Livingston tax-lot boundaries from the
 **NJOGIS "Parcels and MOD-IV Composite"** hosted feature service (no key) as
 GeoJSON in WGS84, caching to `output/parcels_livingston.geojson` (~10.5K lots).
 Join key is `Block`+`Lot` after **stripping leading zeros** (sales rows are

@@ -6,8 +6,8 @@ Census *batch* endpoint (CSV upload, up to 10k rows/request) which is far faster
 than per-address calls.
 
 Usage:
-    python3 geocode.py            # geocode all unique addresses in data/merged.csv
-    from geocode import load_cache, geocode_addresses
+    python3 src/geocode.py        # geocode all unique addresses in data/merged.csv
+    from src.geocode import load_cache, geocode_addresses
 """
 from __future__ import annotations
 
@@ -19,8 +19,9 @@ from pathlib import Path
 
 import pandas as pd
 
-DATA = Path("data/merged.csv")
-CACHE = Path("output/geocode_cache.csv")
+ROOT = Path(__file__).resolve().parent.parent  # repo root (src/ lives under it)
+DATA = ROOT / "data" / "merged.csv"
+CACHE = ROOT / "output" / "geocode_cache.csv"
 CITY, STATE, ZIP = "Livingston", "NJ", "07039"
 BATCH_URL = "https://geocoding.geo.census.gov/geocoder/locations/addressbatch"
 BENCHMARK = "Public_AR_Current"

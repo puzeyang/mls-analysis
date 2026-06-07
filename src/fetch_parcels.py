@@ -9,7 +9,7 @@ Each feature's properties carry normalized `block` / `lot` (leading zeros
 stripped) so they join to merged.csv's Block/Lot. ~97% of sale parcels match.
 
 Usage:
-    python3 fetch_parcels.py
+    python3 src/fetch_parcels.py
 """
 from __future__ import annotations
 
@@ -20,7 +20,8 @@ from pathlib import Path
 
 LAYER = ("https://services2.arcgis.com/XVOqAjTOJ5P6ngMu/arcgis/rest/services/"
          "Parcels_Composite_NJ_WM/FeatureServer/0/query")
-OUT = Path("output/parcels_livingston.geojson")
+ROOT = Path(__file__).resolve().parent.parent  # repo root (src/ lives under it)
+OUT = ROOT / "output" / "parcels_livingston.geojson"
 PAGE = 2000
 
 

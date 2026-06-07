@@ -17,14 +17,14 @@ address search + geocoder).
 - `data_quality.ipynb` — record reconciliation (raw → clean → mappable) and a
   `diagnose()` tool for "why isn't X on the map?".
 
-## Scripts
+## Scripts (`src/`)
 
-- `geocode.py` — geocodes addresses via the free US Census batch geocoder (cached).
-- `fetch_parcels.py` — pulls NJOGIS parcel-boundary polygons for the choropleth.
+- `src/geocode.py` — geocodes addresses via the free US Census batch geocoder (cached).
+- `src/fetch_parcels.py` — pulls NJOGIS parcel-boundary polygons for the choropleth.
 
 ## Data
 
 Raw CSVs and geocode/parcel caches are **not** committed (they contain
 buyer/seller names). The published map has its data inlined, so it works
 standalone. To rebuild from scratch, place the county exports in `data/`, run
-`geocode.py` and `fetch_parcels.py`, then run the notebooks.
+`python3 src/geocode.py` and `python3 src/fetch_parcels.py`, then run the notebooks.
