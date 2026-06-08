@@ -3,11 +3,12 @@
 Historical real-estate sales analysis for Livingston Township, NJ (ZIP 07039),
 from county property records (~20K sales, 1983–2026).
 
-## Live map
+## Live maps
 
-The interactive sales map is published via GitHub Pages: **`index.html`**
-(clustered per-location pins, price heatmap, parcel choropleth, per-year layers,
-address search + geocoder).
+Published via GitHub Pages. `index.html` is a landing page linking to one
+interactive map **per ZIP** — `07039.html` (Livingston), `07041.html` (Millburn),
+`07078.html` (Short Hills) — each with clustered per-location pins, a price
+heatmap, and a parcel choropleth. Regenerate with `python3 src/build_pages.py`.
 
 ## Notebooks (`notebooks/`)
 

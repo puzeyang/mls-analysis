@@ -48,6 +48,13 @@ class City:
     def parcels(self) -> Path:
         return self.out_dir / "parcels.geojson"
 
+    def geo_label(self, zip: str) -> str:
+        """Human place name for a ZIP (from localities), e.g. 07078 -> 'Short Hills'."""
+        for place, zc in self.localities:
+            if zc == zip:
+                return place
+        return self.label
+
 
 CITIES = {
     "livingston": City(
