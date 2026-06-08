@@ -14,6 +14,7 @@ import folium
 import pandas as pd
 from folium.features import DivIcon
 from folium.plugins import Geocoder, HeatMap, MarkerCluster, Search
+from jinja2 import Template
 
 from config import City
 
@@ -142,6 +143,16 @@ def build_map(city: City, seg: pd.DataFrame, parcels: dict | None,
            placeholder="Search any sale address...").add_to(m)
     Geocoder(position="topleft", collapsed=False, add_marker=True,
              provider="nominatim").add_to(m)
+
+    # The Search plugin adds its layer to the map on init (overriding show=False),
+    # so the blue search dots appear on load. Remove the layer after setup — it
+    # starts hidden/unchecked; search still re-locates the matched feature.
+    hide = folium.MacroElement()
+    hide._template = Template(
+        "{% macro script(this, kwargs) %}"
+        f"{m.get_name()}.removeLayer({search_gj.get_name()});"
+        "{% endmacro %}")
+    m.add_child(hide)
 
     folium.LayerControl(collapsed=False).add_to(m)
     return m
