@@ -8,29 +8,48 @@ Analyzes **MLS / county real-estate sales records** to surface historical sales
 trends for a geography (city/township, ZIP, neighborhood) — price trends over
 time, volume, $/sqft — and presents results as reports and on maps.
 
-### Data
+### Data — multi-city
 
-- `data/*.csv` — raw exports of individual property sales. One row per sale.
-  Source is a county property database (`stateinfoservice.com`). Currently
-  Essex County / Livingston Township, NJ (ZIP 07039), sales spanning ~1983–2026,
-  ~20K rows.
-- `data/merged.csv` — all raw exports concatenated and de-duplicated on the full
-  row (exact-duplicate rows dropped). This is the canonical input for analysis.
-- Columns (19): `Property Address, Block, Lot, Qual, Sale Date, Sale Price,
-  Acreage, Sq Ft, Buyer Name, Seller Name, Property Class, Zoning, Beds, Baths,
-  Year Built, Total Rooms, Land Value, Building Value, Property URL`.
+Data is organized **per city** under `data/<city>/`, with **`data/<city>/merged.csv`**
+as the canonical input. `src/config.py` defines each city (data path, geocoder
+localities, parcel `MUN_NAME`/`CD_CODE`, and per-city `output/<city>/` paths);
+pick one with `get_city("livingston" | "millburn")`. To add a city, append to
+`CITIES` in config.py.
 
-Data notes / gotchas:
+All cities are normalized to the **same 19 columns**: `Property Address, Block,
+Lot, Qual, Sale Date, Sale Price, Acreage, Sq Ft, Buyer Name, Seller Name,
+Property Class, Zoning, Beds, Baths, Year Built, Total Rooms, Land Value,
+Building Value, Property URL`. `Sale Date` is `MM/DD/YYYY`; `Sale Price` is an
+unformatted integer.
 
-- `Sale Date` is `MM/DD/YYYY`. `Sale Price` is an unformatted integer.
-- There is **no ZIP/city column** — geography is implied by the export
-  (Livingston = 07039). `Property URL` embeds a parcel id `0710_<block>_<lot>`
-  (`0710` = Livingston municipal code); `Block`+`Lot` (+`Qual`) uniquely key a
-  parcel. Re-sales of the same parcel appear as multiple rows over time.
-- Addresses are free-form and unnormalized (`82 Ridge Dr` vs `82 Ridge Drive`);
-  needs cleaning/geocoding before mapping.
-- Some rows carry placeholder/redacted values (e.g. `REDACTED`, sheriff/LLC
-  names, `$0`/nominal non-arms-length sales) — filter these for trend analysis.
+- **livingston** — `data/livingston/*.csv` from a county property DB
+  (`stateinfoservice.com`), Essex/Livingston (07039), ~1983–2026, ~20K rows.
+  `data/livingston/merged.csv` = the raw CSVs concatenated + de-duped on the full
+  row. `Property Class` uses "Residential"/"Commercial"/…; `Property URL` embeds
+  parcel id `0710_<block>_<lot>`.
+- **millburn** — `data/millburn/*.xls` are GSMLS broker exports (212 cols, listings).
+  `src/merge_millburn.py` reads them, keeps **closed sales only** (SalesPrice +
+  ClosedDate), de-dupes to latest per MlsNum, and **maps to the 19-col schema**
+  (`data/millburn/merged.csv`, ~7.5K sales, 2000–2026). Caveats: no Buyer/Seller
+  names (not in export); `Sq Ft` sparse (~18%); `Property Class` is `SubPropType`
+  (`SinglFam`/`CCT`/blank — so use `property_class="SinglFam"` or `None`, not
+  "Residential"); Millburn Twp spans Millburn 07041 **and Short Hills 07078**
+  (geocoder tries both).
+
+Data notes / gotchas (general):
+
+- **No ZIP/city column** in `merged.csv` — geography is implied by the export.
+  ZIP is **recovered from the geocoder**: `geocode.py` records which locality
+  matched each address (its `zip` column in `geocode_cache.csv`), so the
+  notebooks join that on to enable a `zip` FILTER. Livingston is all 07039;
+  Millburn splits 07041 (Millburn) / 07078 (Short Hills) — and Short Hills runs
+  far pricier (2024 SF median ~$2.19M vs Millburn ~$1.33M), so the ZIP split
+  matters. `Block`+`Lot`(+`Qual`) key a parcel; re-sales appear as multiple
+  rows. Block/Lot are often zero-padded (`05100` vs `5100`) — `norm()` strips
+  leading zeros to join.
+- Addresses are free-form/unnormalized (`82 Ridge Dr` vs `Drive`).
+- Placeholder/non-arms-length rows exist (`REDACTED`, `$0`/nominal sales,
+  `YearBuilt=9999`) — filtered for trend analysis.
 
 ### Code
 
@@ -41,24 +60,24 @@ service or a cached geocode table keyed by parcel/address.)
 
 **Direction (chosen):** primary interface is a **Jupyter notebook** for
 interactive trend analysis + reports, with an interactive **Folium** map layer.
+All scripts take a city arg (`python3 src/<script>.py <city>`); notebooks set
+`CITY = get_city("<city>")` in their first cell. Caches/outputs are per-city
+under `output/<city>/`.
 
-Geocoding: `src/geocode.py` resolves addresses to lat/lon via the **free US Census
-batch geocoder** (no API key; results are storable). It geocodes the ~8,900
-*unique* addresses (not all 20K rows) and caches to `output/geocode_cache.csv`
-keyed by raw address — re-runs only fetch new addresses. ~96% of unique
-addresses / ~97% of rows match; misses are mostly no-house-number records
-(commercial/condo). Run `python3 src/geocode.py` from the repo root to (re)build the
-cache. (Census was chosen over Google Maps: Google needs a billing key and its
-ToS forbids caching/displaying geocodes off Google maps — both dealbreakers
-here.)
+Geocoding: `src/geocode.py <city>` resolves addresses to lat/lon via the **free
+US Census batch geocoder** (no API key; results are storable), caching to
+`output/<city>/geocode_cache.csv` keyed by raw address — re-runs only fetch new
+addresses. A city can list several geocoder localities (city/zip) that are tried
+in turn, since a township can span postal areas (Millburn → Millburn 07041 +
+Short Hills 07078, lifting its match from 31% → 99%). Livingston ~96% unique /
+~97% rows. (Census over Google Maps: Google needs a billing key and its ToS
+forbids caching/displaying geocodes off Google maps.)
 
-Parcel polygons: `src/fetch_parcels.py` pulls Livingston tax-lot boundaries from the
-**NJOGIS "Parcels and MOD-IV Composite"** hosted feature service (no key) as
-GeoJSON in WGS84, caching to `output/parcels_livingston.geojson` (~10.5K lots).
-Join key is `Block`+`Lot` after **stripping leading zeros** (sales rows are
-sometimes zero-padded, e.g. `05100` vs the parcel layer's `5100`); ~97% of sale
-parcels match. The municipal code is `0710` (= `CD_CODE`/the `Property URL`
-prefix).
+Parcel polygons: `src/fetch_parcels.py <city>` pulls the township's tax-lot
+boundaries from the **NJOGIS "Parcels and MOD-IV Composite"** hosted service (no
+key) as GeoJSON in WGS84, caching to `output/<city>/parcels.geojson` (queried by
+the city's `MUN_NAME`). Join key is `Block`+`Lot` after **stripping leading
+zeros**; ~97% of Livingston sale parcels match.
 
 - `notebooks/sales_trends.ipynb` — loads `merged.csv`, cleans (drops
   unparseable dates + non-arms-length sales priced `< $1,000`), filters a

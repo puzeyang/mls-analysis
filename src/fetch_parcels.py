@@ -1,27 +1,27 @@
-"""Fetch Livingston Township parcel-boundary polygons from NJOGIS.
+"""Fetch a township's parcel-boundary polygons from NJOGIS, per city.
 
 Source: NJ Office of GIS "Parcels and MOD-IV Composite of NJ" hosted feature
-service. Pulls only Livingston Twp (MUN_NAME='LIVINGSTON TWP', CD_CODE 0710) as
-GeoJSON in WGS84 (lat/lon), paginated. Caches to output/parcels_livingston.geojson
-so it's fetched once.
+service. Pulls only the city's township (by MUN_NAME) as GeoJSON in WGS84
+(lat/lon), paginated. Caches to output/<city>/parcels.geojson so it's fetched
+once.
 
 Each feature's properties carry normalized `block` / `lot` (leading zeros
 stripped) so they join to merged.csv's Block/Lot. ~97% of sale parcels match.
 
 Usage:
-    python3 src/fetch_parcels.py
+    python3 src/fetch_parcels.py livingston      # or millburn
 """
 from __future__ import annotations
 
 import json
+import sys
 import urllib.parse
 import urllib.request
-from pathlib import Path
+
+from config import City, get_city
 
 LAYER = ("https://services2.arcgis.com/XVOqAjTOJ5P6ngMu/arcgis/rest/services/"
          "Parcels_Composite_NJ_WM/FeatureServer/0/query")
-ROOT = Path(__file__).resolve().parent.parent  # repo root (src/ lives under it)
-OUT = ROOT / "output" / "parcels_livingston.geojson"
 PAGE = 2000
 
 
@@ -33,9 +33,9 @@ def norm(s) -> str:
     return s.lstrip("0") or "0"
 
 
-def _fetch_page(offset: int) -> dict:
+def _fetch_page(city: City, offset: int) -> dict:
     q = urllib.parse.urlencode({
-        "where": "MUN_NAME='LIVINGSTON TWP'",
+        "where": f"MUN_NAME='{city.mun_name}'",
         "outFields": "PAMS_PIN,PCLBLOCK,PCLLOT,PCLQCODE,PROP_LOC",
         "outSR": 4326,            # WGS84 lat/lon, matches the geocode cache
         "resultOffset": offset,
@@ -46,14 +46,14 @@ def _fetch_page(offset: int) -> dict:
         return json.load(r)
 
 
-def fetch_parcels() -> dict:
+def fetch_parcels(city: City) -> dict:
     features = []
     offset = 0
     while True:
-        page = _fetch_page(offset)
+        page = _fetch_page(city, offset)
         fs = page.get("features", [])
         features.extend(fs)
-        print(f"  fetched {len(features)} parcels...")
+        print(f"  [{city.name}] fetched {len(features)} parcels...")
         if len(fs) < PAGE:
             break
         offset += PAGE
@@ -64,11 +64,12 @@ def fetch_parcels() -> dict:
         p["lot"] = norm(p.get("PCLLOT"))
 
     fc = {"type": "FeatureCollection", "features": features}
-    OUT.parent.mkdir(exist_ok=True)
-    OUT.write_text(json.dumps(fc))
-    print(f"wrote {OUT} — {len(features)} parcels, {OUT.stat().st_size/1e6:.1f} MB")
+    city.parcels.parent.mkdir(parents=True, exist_ok=True)
+    city.parcels.write_text(json.dumps(fc))
+    print(f"wrote {city.parcels} — {len(features)} parcels, "
+          f"{city.parcels.stat().st_size / 1e6:.1f} MB")
     return fc
 
 
 if __name__ == "__main__":
-    fetch_parcels()
+    fetch_parcels(get_city(sys.argv[1] if len(sys.argv) > 1 else ""))
