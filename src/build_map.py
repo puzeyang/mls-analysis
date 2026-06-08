@@ -13,15 +13,13 @@ import branca.colormap as cm
 import folium
 import pandas as pd
 from folium.features import DivIcon
-from folium.plugins import HeatMap, MarkerCluster
+from folium.plugins import Geocoder, HeatMap, MarkerCluster, Search
 
 from config import City
 
 
-def load_segment(city: City, zip: str | None = None,
-                 property_class: str | None = "__residential__",
-                 year_min: int | None = 2000) -> pd.DataFrame:
-    """Clean, geocoded, optionally ZIP/class/year-scoped sales for `city`."""
+def load_all(city: City) -> pd.DataFrame:
+    """All clean, geocoded sales for `city` (no class/year/zip filter)."""
     df = pd.read_csv(city.data, dtype=str)
     cache = pd.read_csv(city.geocode_cache, dtype={"address": str, "zip": str})
 
@@ -39,9 +37,15 @@ def load_segment(city: City, zip: str | None = None,
     df["lot"] = df["Lot"].map(norm)
 
     df = df[df["sale_date"].notna() & (df["price"] >= 1000)]
-    df = df.merge(cache[cache["matched"]][["address", "lat", "lon", "zip"]],
-                  left_on="addr", right_on="address", how="inner")
+    return df.merge(cache[cache["matched"]][["address", "lat", "lon", "zip"]],
+                    left_on="addr", right_on="address", how="inner")
 
+
+def load_segment(city: City, zip: str | None = None,
+                 property_class: str | None = "__residential__",
+                 year_min: int | None = 2000) -> pd.DataFrame:
+    """Clean, geocoded, optionally ZIP/class/year-scoped sales for `city`."""
+    df = load_all(city)
     if property_class == "__residential__":
         property_class = city.residential_class
     if property_class is not None:
@@ -54,8 +58,12 @@ def load_segment(city: City, zip: str | None = None,
 
 
 def build_map(city: City, seg: pd.DataFrame, parcels: dict | None,
-              title: str) -> folium.Map:
-    """Render the clustered-pin + heatmap + choropleth map for `seg`."""
+              title: str, search_df: pd.DataFrame | None = None) -> folium.Map:
+    """Render the clustered-pin + heatmap + choropleth map for `seg`.
+
+    `search_df` (default: `seg`) backs the address-search box — pass the city's
+    full geocoded dataset so any property is findable even if filtered out of seg.
+    """
     q1, q2, q3 = seg["price"].quantile([0.25, 0.5, 0.75])
 
     def color(p):
@@ -114,6 +122,26 @@ def build_map(city: City, seg: pd.DataFrame, parcels: dict | None,
                                               localize=True),
             ).add_to(m)
             cmap.add_to(m)
+
+    # --- address search over ALL geocoded sales (so a property filtered out of
+    # seg is still findable) + a geocoder that drops a marker on any address ---
+    sdf = seg if search_df is None else search_df
+    latest = sdf.sort_values("sale_date").groupby("addr", as_index=False).last()
+    search_gj = folium.GeoJson(
+        {"type": "FeatureCollection", "features": [
+            {"type": "Feature",
+             "geometry": {"type": "Point", "coordinates": [r["lon"], r["lat"]]},
+             "properties": {"addr": r["addr"],
+                            "latest": f"${r['price']:,.0f} ({r['sale_date']:%Y})"}}
+            for _, r in latest.iterrows()]},
+        name="Searchable sales (all years)", show=False,
+        marker=folium.CircleMarker(radius=6, color="blue", fill=True, fill_opacity=0.9),
+        popup=folium.GeoJsonPopup(fields=["addr", "latest"], aliases=["", "latest sale:"]),
+    ).add_to(m)
+    Search(layer=search_gj, search_label="addr", position="topleft", collapsed=False,
+           placeholder="Search any sale address...").add_to(m)
+    Geocoder(position="topleft", collapsed=False, add_marker=True,
+             provider="nominatim").add_to(m)
 
     folium.LayerControl(collapsed=False).add_to(m)
     return m

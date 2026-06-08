@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 
-from build_map import build_map, load_segment
+from build_map import build_map, load_all, load_segment
 from config import CITIES, ROOT
 
 
@@ -22,13 +22,14 @@ def zip_pages() -> list[tuple[str, str]]:
     built = []
     for city in CITIES.values():
         parcels = json.loads(city.parcels.read_text()) if city.parcels.exists() else None
+        full = load_all(city)   # backs the address search (every year/zip/class)
         for _, zc in city.localities:
             seg = load_segment(city, zip=zc)
             if seg.empty:
                 print(f"skip {zc}: no sales")
                 continue
             title = f"{city.geo_label(zc)} — {len(seg):,} sales"
-            m = build_map(city, seg, parcels, title)
+            m = build_map(city, seg, parcels, title, search_df=full)
             out = ROOT / f"{zc}.html"
             m.save(str(out))
             print(f"wrote {out.name}: {len(seg):,} sales ({out.stat().st_size/1e6:.0f} MB)")
