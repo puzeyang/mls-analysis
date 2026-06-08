@@ -5,10 +5,11 @@ from county property records (~20K sales, 1983–2026).
 
 ## Live maps
 
-Published via GitHub Pages. `index.html` is a landing page linking to one
-interactive map **per ZIP** — `07039.html` (Livingston), `07041.html` (Millburn),
-`07078.html` (Short Hills) — each with clustered per-location pins, a price
-heatmap, and a parcel choropleth. Regenerate with `python3 src/build_pages.py`.
+Published via GitHub Pages. `index.html` (repo root) is a landing page linking to
+one interactive map **per ZIP** under `html/` — `html/07039.html` (Livingston),
+`html/07041.html` (Millburn), `html/07078.html` (Short Hills) — each with
+clustered per-location pins, a price heatmap, and a parcel choropleth. Regenerate
+with `python3 src/build_pages.py`.
 
 ## Notebooks (`notebooks/`)
 
