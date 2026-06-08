@@ -86,11 +86,13 @@ def build_map(city: City, seg: pd.DataFrame, parcels: dict | None,
 
     m = folium.Map(location=[seg["lat"].median(), seg["lon"].median()],
                    zoom_start=14, tiles="cartodbpositron")
-    folium.map.Marker(
-        [seg["lat"].max(), seg["lon"].median()],
-        icon=DivIcon(html=f'<div style="font:600 14px sans-serif;background:white;'
-                          f'padding:3px 7px;border:1px solid #999;border-radius:4px">{title}</div>'),
-    ).add_to(m)
+    # fixed title bar (top-center) — an overlay, not a map marker, so it stays put
+    # and doesn't overlap the pins or wrap.
+    m.get_root().html.add_child(folium.Element(
+        f'<div style="position:fixed;top:10px;left:50%;transform:translateX(-50%);'
+        f'z-index:9999;background:rgba(255,255,255,.92);padding:5px 12px;'
+        f'border:1px solid #999;border-radius:5px;font:600 15px sans-serif;'
+        f'white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.3)">{title}</div>'))
 
     cluster = MarkerCluster(name="Sales (clustered)").add_to(m)
     for (lat, lon), g in seg.groupby(["lat", "lon"]):
