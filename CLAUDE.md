@@ -27,14 +27,15 @@ unformatted integer.
   `data/livingston/merged.csv` = the raw CSVs concatenated + de-duped on the full
   row. `Property Class` uses "Residential"/"Commercial"/…; `Property URL` embeds
   parcel id `0710_<block>_<lot>`.
-- **millburn** — `data/millburn/*.xls` are GSMLS broker exports (212 cols, listings).
-  `src/merge_millburn.py` reads them, keeps **closed sales only** (SalesPrice +
-  ClosedDate), de-dupes to latest per MlsNum, and **maps to the 19-col schema**
-  (`data/millburn/merged.csv`, ~7.5K sales, 2000–2026). Caveats: no Buyer/Seller
-  names (not in export); `Sq Ft` sparse (~18%); `Property Class` is `SubPropType`
-  (`SinglFam`/`CCT`/blank — so use `property_class="SinglFam"` or `None`, not
-  "Residential"); Millburn Twp spans Millburn 07041 **and Short Hills 07078**
-  (geocoder tries both).
+- **millburn**, **chathamtwp** — `data/<city>/*.xls` are GSMLS broker exports
+  (212 cols, listings). `src/merge_gsmls.py <city>` reads them, keeps **closed
+  sales only** (SalesPrice + ClosedDate), de-dupes to latest per MlsNum, and
+  **maps to the 19-col schema** (`data/<city>/merged.csv`). Millburn ~7.5K sales
+  (07041 + Short Hills 07078); Chatham Twp ~4.5K (07928 + Green Village 07935),
+  both 2000–2026. Caveats: no Buyer/Seller names (not in export); `Sq Ft` sparse;
+  `Property Class` is `SubPropType` (`SinglFam`/`CCT`/blank — so use
+  `property_class="SinglFam"` or `None`, not "Residential"); fused condo-unit
+  addresses (`6E Terrace Dr`) don't geocode (~9% miss).
 
 Data notes / gotchas (general):
 

@@ -70,6 +70,14 @@ CITIES = {
         localities=(("Millburn", "07041"), ("Short Hills", "07078")),
         residential_class="SinglFam",
     ),
+    "chathamtwp": City(
+        name="chathamtwp", label="Chatham Township (07928)",
+        state="NJ", mun_name="CHATHAM TWP", cd_code="1405",
+        # GSMLS .xls source (like Millburn). Mailing locality is Chatham 07928;
+        # Green Village 07935 covers a slice of the township.
+        localities=(("Chatham", "07928"), ("Green Village", "07935")),
+        residential_class="SinglFam",
+    ),
 }
 
 
