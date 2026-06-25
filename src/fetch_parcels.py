@@ -36,7 +36,7 @@ def norm(s) -> str:
 def _fetch_page(city: City, offset: int) -> dict:
     q = urllib.parse.urlencode({
         "where": f"MUN_NAME='{city.mun_name}'",
-        "outFields": "PAMS_PIN,PCLBLOCK,PCLLOT,PCLQCODE,PROP_LOC",
+        "outFields": "PAMS_PIN,PCLBLOCK,PCLLOT,PCLQCODE,PROP_LOC,LAND_DESC",
         "outSR": 4326,            # WGS84 lat/lon, matches the geocode cache
         "resultOffset": offset,
         "resultRecordCount": PAGE,
