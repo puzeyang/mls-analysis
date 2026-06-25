@@ -108,9 +108,13 @@ def build_map(city: City, seg: pd.DataFrame, parcels: dict | None,
                   .agg(median_price=("price", "median"), sales=("price", "size")).reset_index())
         agg["key"] = agg["block"] + "_" + agg["lot"]
         stats = agg.set_index("key")[["median_price", "sales"]].to_dict("index")
-        feats = [{**f, "properties": {**f["properties"], **stats[k]}}
-                 for f in parcels["features"]
-                 if (k := f"{f['properties']['block']}_{f['properties']['lot']}") in stats]
+        feats = []
+        for f in parcels["features"]:
+            p = f["properties"]
+            k = f"{p['block']}_{p['lot']}"
+            if k in stats:
+                land_desc = p.get("LAND_DESC") or ""
+                feats.append({**f, "properties": {**p, **stats[k], "land_desc": land_desc}})
         if feats:
             lo, hi = agg["median_price"].quantile([0.05, 0.95])
             cmap = cm.linear.YlOrRd_09.scale(lo, hi)
@@ -120,8 +124,8 @@ def build_map(city: City, seg: pd.DataFrame, parcels: dict | None,
                 name="Median price by parcel", show=False,
                 style_function=lambda ft: {"fillColor": cmap(ft["properties"]["median_price"]),
                                            "color": "#555", "weight": 0.5, "fillOpacity": 0.7},
-                tooltip=folium.GeoJsonTooltip(fields=["PROP_LOC", "median_price", "sales"],
-                                              aliases=["Address", "Median price", "# sales"],
+                tooltip=folium.GeoJsonTooltip(fields=["PROP_LOC", "land_desc", "median_price", "sales"],
+                                              aliases=["Address", "Lot dimensions", "Median price", "# sales"],
                                               localize=True),
             ).add_to(m)
             cmap.add_to(m)
