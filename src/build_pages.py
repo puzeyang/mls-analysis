@@ -42,6 +42,8 @@ def zip_pages() -> list[tuple[str, str]]:
 
 
 def write_index(pages: list[tuple[str, str]]) -> None:
+    from datetime import datetime
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     items = "\n".join(
         f'    <li><a href="html/{zc}.html">{label} — {zc}</a></li>' for zc, label in pages)
     html = f"""<!doctype html><html><head><meta charset="utf-8">
@@ -50,6 +52,7 @@ def write_index(pages: list[tuple[str, str]]) -> None:
 h1{{font-size:1.4rem}} li{{margin:.4rem 0}}</style></head>
 <body><h1>Real-estate sales maps by ZIP</h1>
 <p>Interactive maps of historical sales (clustered pins, price heatmap, parcel choropleth).</p>
+<p style="color:#888;font-size:.85rem">Updated: {timestamp}</p>
 <ul>
 {items}
 </ul></body></html>"""
