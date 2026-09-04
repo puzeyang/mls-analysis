@@ -85,7 +85,10 @@ def build_map(city: City, seg: pd.DataFrame, parcels: dict | None,
         return f"<b>{head}</b><br>" + "<br>".join(lines)
 
     m = folium.Map(location=[seg["lat"].median(), seg["lon"].median()],
-                   zoom_start=14, tiles="cartodbpositron")
+                   zoom_start=14,
+                   tiles="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                   attr='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> '
+                        'contributors &copy; <a href="https://carto.com/attributions">CARTO</a>')
     # fixed title bar (top-center) — an overlay, not a map marker, so it stays put
     # and doesn't overlap the pins or wrap.
     m.get_root().html.add_child(folium.Element(
